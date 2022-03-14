@@ -1,7 +1,7 @@
-FROM python:3.6-slim
+FROM centos/python-38-centos7
 COPY . /python-test-calculator
 WORKDIR /python-test-calculator
-RUN /usr/local/bin/python -m pip install --upgrade pip
+RUN python -m pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
-RUN ["pytest", "-v", "--junitxml=reports/result.xml"]
+RUN ["pytest", "-v", "--junit   xml=reports/result.xml"]
 CMD tail -f /dev/null
