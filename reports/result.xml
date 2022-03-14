@@ -1,1 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" errors="0" failures="0" skipped="0" tests="2" time="0.023" timestamp="2022-03-14T11:06:29.742394" hostname="Yanivs-MacBook-Pro.local"><testcase classname="test_addition" name="test_add" time="0.001" /><testcase classname="test_addition" name="test_add_string" time="0.001" /></testsuite></testsuites>

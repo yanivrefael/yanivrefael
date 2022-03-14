@@ -1,0 +1,8 @@
+FROM inveniosoftware/centos8-python:3.8
+USER root
+COPY . /python-test-calculator
+WORKDIR /python-test-calculator
+RUN python -m pip install --upgrade pip
+RUN pip install --no-cache-dir -r requirements.txt
+RUN ["pytest", "-v", "--junitxml=reports/result-rh8.xml"]
+CMD tail -f /dev/null
