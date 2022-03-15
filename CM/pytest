@@ -1,0 +1,78 @@
+pipeline {
+  agent any
+
+  options {
+    timeout(time: 6, unit: 'HOURS')
+    ansiColor('xterm')
+  }
+
+  stages {
+    stage('clean'){
+        sh 'rm -rf reports; mkdir reports'
+    }
+
+    stage('Test') {
+      parallel {
+        stage('Test-RH-7') {
+          steps {
+            echo "Check current working directory"
+            sh 'pwd'
+            echo "Build docker image and run container"
+            sh 'docker build -t test-image .'
+            sh 'docker run -d --name "test-container" test-image'
+            echo "Copy result.xml into Jenkins container"
+            sh 'docker cp test-container:/python-test-calculator/reports/result.xml reports/'
+            echo "Cleanup"
+            sh 'docker stop "test-container"'
+            sh 'docker rm "test-container"'
+            sh 'docker rmi $IMAGE_NAME'
+          }
+        }
+
+        stage('Test-WIN') {
+          steps {
+	          echo "SVN_TAG is ${SVN_TAG}"
+	          sh 'hostname'
+	          sh 'pwd'
+	          sh 'printenv'
+	          dir('testing/ekm/environments/ec2'){
+	            ansiblePlaybook credentialsId: 'autotest', disableHostKeyChecking: true, installation: 'Ansible', extras: '-vvv -e \'svn_tag=${SVN_TAG} owner=autobuildwindows${SVN_TAG} os_version=2016 os_type=windows\'',playbook: 'Jenkins.Build.Windows.yml'
+	          }
+	          dir('testing/cypress'){
+	            sh 'npm install'
+	            sh '''
+    		            ep1_ip=`grep -A1 "^\\[ep1\\]" ../ekm/environments/ec2/host | tail -1`
+        	          sudo docker run --rm -i -v $PWD:/e2e -w /e2e cypress/included:8.3.1 $@ ${TEST_CYPRESS_SUITE} -b chrome --config baseUrl=https://${ep1_ip}
+	                '''
+	          }
+          }
+        }
+      }// parallel
+    }
+  }
+  post {
+    always {
+      echo "SVN_TAG is ${SVN_TAG}"
+      sh 'hostname'
+      sh 'pwd'
+      dir ('/home/ubuntu/unbound-dev/testing/cypress/'){
+	      script {
+	          allure([
+		          includeProperties: false,
+  		        jdk: '',
+	  	        properties: [],
+		          reportBuildPolicy: 'ALWAYS',
+		          results: [[path: 'allure_report_autobuild${SVN_TAG}_${SVN_TAG}']]
+  	        ])
+	      }
+      }
+      dir('testing/misc/python'){
+  	    sh 'python -m pytest helper.py::test_generate_allure_report --cmdopt autobuildlinux${SVN_TAG},${SVN_TAG} -s --disable-warnings'
+        sh 'python -m pytest helper.py::test_generate_allure_report --cmdopt autobuildwindows${SVN_TAG},${SVN_TAG} -s --disable-warnings'
+	      sh 'python -m pytest system.py::test_delete_topology --cmdopt autobuildlinux${SVN_TAG} -s --disable-warnings'
+        sh 'python -m pytest system.py::test_delete_topology --cmdopt autobuildwindows${SVN_TAG} -s --disable-warnings'
+      }
+      sh 'sudo chmod -R 777 testing'
+    }
+  }//post
+}// pipline
