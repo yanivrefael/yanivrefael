@@ -7,4 +7,4 @@ def test_add():
     assert result == 7
 def test_add_string():
     with pytest.raises(TypeError):
-        add("stringa", 4)
+        add("stringaa", 4)
