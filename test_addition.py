@@ -1,7 +1,7 @@
 #test_addition.py
 from src.calculator import add
 import pytest
-# tes1t
+# tes2t
 def test_add():
     result = add(3, 4)
     assert result == 7
