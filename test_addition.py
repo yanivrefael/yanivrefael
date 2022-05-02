@@ -1,10 +1,9 @@
 #test_addition.py
 from src.calculator import add
 import pytest
-# tes2t
 def test_add():
     result = add(3, 4)
     assert result == 7
 def test_add_string():
     with pytest.raises(TypeError):
-        add("stringaa", 4)
+        add("string", 4)
